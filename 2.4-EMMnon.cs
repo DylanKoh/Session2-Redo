@@ -88,7 +88,7 @@ namespace Session2_Redo
             else
             {
                 var getAssetID = Convert.ToInt64(dataGridView1.CurrentRow.Cells[4].Value);
-                (new EMR(getAssetID, _id)).Show();
+                (new EMR(getAssetID)).Show();
                 EMMnon_Load(null, null);
             }
         }
