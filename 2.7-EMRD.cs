@@ -82,11 +82,18 @@ namespace Session2_Redo
         {
             using (var context = new Session2Entities())
             {
-
+                var partID = (from x in context.Parts
+                              where x.Name == cbParts.SelectedItem.ToString()
+                              select x.ID).FirstOrDefault();
                 var checkPart = (from x in context.ChangedParts
                                  where x.Part.Name == cbParts.SelectedItem.ToString()
                                  orderby x.EmergencyMaintenance.EMEndDate descending
-                                 select new { timeLeft = DateTime.Now - x.EmergencyMaintenance.EMEndDate }).FirstOrDefault();
+                                 select x.EmergencyMaintenance.EMEndDate).FirstOrDefault();
+                TimeSpan check = TimeSpan.Zero;
+                if (checkPart != null)
+                {
+                    check = DateTime.Now - Convert.ToDateTime(checkPart);
+                }
 
                 foreach (DataGridViewRow item in dataGridView1.Rows)
                 {
@@ -106,15 +113,77 @@ namespace Session2_Redo
                     MessageBox.Show("Please choose a value more than 0!", "Invalid amount detected",
                             MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 }
-                else if (checkPart.timeLeft.Value.TotalDays < context.Parts.Where(x => x.Name == cbParts.SelectedItem.ToString()).Select(x => x.EffectiveLife).First())
+                else if (check.TotalDays < context.Parts.Where(x => x.Name == cbParts.SelectedItem.ToString()).Select(x => x.EffectiveLife).FirstOrDefault())
                 {
                     var dl = MessageBox.Show("Are you sure you want to add? Effective life is not over", "Add to list",
                             MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                     if (dl == DialogResult.Yes)
                     {
+                        var row = new List<string>()
+                        {
+                            cbParts.SelectedItem.ToString(), nUDAmount.Value.ToString(), partID.ToString()
+                        };
+                        dataGridView1.Rows.Add(row.ToArray());
 
                     }
                 }
+                else
+                {
+                    var row = new List<string>()
+                    {
+                        cbParts.SelectedItem.ToString(), nUDAmount.Value.ToString(), partID.ToString()
+                    };
+                    dataGridView1.Rows.Add(row.ToArray());
+                }
+            }
+        }
+
+        private void btnSubmit_Click(object sender, EventArgs e)
+        {
+            using (var context = new Session2Entities())
+            {
+                if (rtxtTechnicianNote.Text.Trim() == "")
+                {
+                    MessageBox.Show("Please enter technician notes before submitting", "Empty note",
+                       MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else if (dtpCompleted.Value < dtpStart.Value)
+                {
+                    MessageBox.Show("Completed date cannot be earlier than start date", "Error in date entry",
+                       MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else
+                {
+                    foreach (var item in context.ChangedParts.Where(x => x.EmergencyMaintenanceID == _emID).Select(x => x))
+                    {
+                        context.ChangedParts.Remove(item);
+                    }
+                    var update = (from x in context.EmergencyMaintenances
+                                  where x.ID == _emID
+                                  select x).First();
+                    update.EMEndDate = dtpCompleted.Value;
+                    update.EMStartDate = dtpStart.Value;
+                    update.EMTechnicianNote = rtxtTechnicianNote.Text;
+                    foreach (DataGridViewRow item in dataGridView1.Rows)
+                    {
+                        context.ChangedParts.Add(new ChangedPart()
+                        {
+                            EmergencyMaintenanceID = _emID,
+                            PartID = Convert.ToInt64(item.Cells[2].Value),
+                            Amount = Convert.ToDecimal(item.Cells[1].Value)
+                        });
+                    }
+                    context.SaveChanges();
+                    this.Close();
+                }
+            }
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex == 3)
+            {
+                dataGridView1.Rows.RemoveAt(e.RowIndex);
             }
         }
     }

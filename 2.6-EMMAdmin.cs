@@ -64,7 +64,8 @@ namespace Session2_Redo
             else
             {
                 var emID = Convert.ToInt64(dataGridView1.CurrentRow.Cells[5].Value);
-                (new EMRD(emID)).Show();
+                (new EMRD(emID)).ShowDialog();
+                dataGridView1.Rows.Clear();
                 LoadGrid();
             }
         }
