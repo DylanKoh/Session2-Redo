@@ -41,7 +41,7 @@ namespace Session2_Redo
                                      where x.AssetID == item.ID && x.EMEndDate != null
                                      orderby x.EMEndDate descending
                                      select x.EMEndDate).FirstOrDefault();
-                    rows.Add(getEMLast.ToString());
+                    rows.Add(Convert.ToDateTime(getEMLast).ToString("dd/MM/yyyy"));
                     rows.Add(getEMCount.ToString());
                     rows.Add(item.ID.ToString());
                     dataGridView1.Rows.Add(rows.ToArray());
